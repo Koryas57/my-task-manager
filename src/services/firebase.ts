@@ -3,12 +3,12 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyC_n-K9x8C-n-aVauacXvP1pQIaWg9Fjy8",
+  authDomain: "my-task-manager77.firebaseapp.com",
+  projectId: "my-task-manager77",
+  storageBucket: "my-task-manager77.appspot.com",
+  messagingSenderId: "511154049354",
+  appId: "1:511154049354:android:94a0b3372708f697f5b1b3",
 };
 
 const app = initializeApp(firebaseConfig);
