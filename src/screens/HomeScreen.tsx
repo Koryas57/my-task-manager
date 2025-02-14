@@ -1,46 +1,49 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  TextInput,
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { colors } from "../styles/colors";
 import { typography } from "../styles/typography";
 import { spacing } from "../styles/spacing";
-import { getTasks, addTask, deleteTask } from "../services/taskService";
-import { Task } from "../types/Task";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState, store } from "../store";
+import { setTasks, startListeningToTasks } from "../store/tasksSlice";
+import { addTask, deleteTask } from "../services/taskService";
 
-interface HomeScreenProps {}
+const HomeScreen: React.FC = () => {
+  const dispatch = useDispatch();
+  const tasks = useSelector((state: RootState) => state.tasks.tasks);
+  const [taskTitle, setTaskTitle] = useState("");
 
-const HomeScreen: React.FC<HomeScreenProps> = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
-
+  // ✅ Écoute Firebase en temps réel
   useEffect(() => {
-    const fetchTasks = async () => {
-      const fetchedTasks = await getTasks();
-      setTasks(fetchedTasks);
-    };
-    fetchTasks();
+    const unsubscribe = startListeningToTasks()(dispatch);
+    return () => unsubscribe(); // ✅ Désabonnement proprement
   }, []);
 
+  // ✅ Ajouter une tâche avec un nom personnalisé
   const handleAddTask = async () => {
-    const newTask: Task = {
-      id: new Date().toISOString(),
-      title: "Nouvelle tâche",
+    if (!taskTitle.trim()) return;
+
+    await addTask({
+      title: taskTitle,
       completed: false,
       createdAt: new Date(),
       updatedAt: new Date(),
-    };
-    await addTask(newTask);
-    setTasks([...tasks, newTask]);
+    });
+
+    setTaskTitle(""); // Réinitialise l'input
   };
 
+  // ✅ Supprimer une tâche
   const handleDeleteTask = async (taskId: string) => {
     await deleteTask(taskId);
-    setTasks(tasks.filter((task) => task.id !== taskId));
   };
 
   return (
@@ -54,9 +57,17 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
           Organise tes projets comme un pro
         </Text>
 
+        {/* ✅ Champ pour entrer le nom de la tâche */}
+        <TextInput
+          style={styles.input}
+          placeholder="Nom de la tâche..."
+          value={taskTitle}
+          onChangeText={setTaskTitle}
+        />
+
         <FlatList
           data={tasks}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id} // ✅ Utilisation de l'ID Firebase
           renderItem={({ item }) => (
             <Animated.View
               entering={FadeInUp.duration(600)}
@@ -87,6 +98,15 @@ const styles = StyleSheet.create({
   },
   innerContainer: {
     alignItems: "center",
+  },
+  input: {
+    width: "90%",
+    padding: spacing.medium,
+    borderWidth: 1,
+    borderColor: colors.text,
+    marginBottom: spacing.medium,
+    borderRadius: 5,
+    color: colors.text,
   },
   taskItem: {
     flexDirection: "row",
