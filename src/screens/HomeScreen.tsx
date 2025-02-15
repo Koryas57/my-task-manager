@@ -186,7 +186,7 @@ const HomeScreen: React.FC = () => {
               onChangeText={setTaskTitle}
             />
             <TouchableOpacity style={styles.button} onPress={handleAddTask}>
-              <Text style={styles.buttonText}>+ Ajouter une tâche</Text>
+              <Text style={styles.buttonText}> + Ajouter une tâche</Text>
             </TouchableOpacity>
           </>
         )}
