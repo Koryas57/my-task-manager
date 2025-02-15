@@ -9,6 +9,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { Task } from "../types/Task";
+import { query, where } from "firebase/firestore";
 
 const TASKS_COLLECTION = "tasks";
 
@@ -33,19 +34,25 @@ const convertTask = (doc: any): Task => {
 };
 
 // ✅ Récupérer toutes les tâches en temps réel
-export const listenToTasks = (callback: (tasks: Task[]) => void) => {
-  return onSnapshot(collection(db, TASKS_COLLECTION), (snapshot) => {
+export const listenToTasks = (
+  userId: string,
+  callback: (tasks: Task[]) => void
+) => {
+  const q = query(collection(db, "tasks"), where("userId", "==", userId));
+
+  return onSnapshot(q, (snapshot) => {
     const tasks = snapshot.docs.map(convertTask);
     callback(tasks);
   });
 };
 
 // ✅ Ajouter une tâche (avec dates en string)
-export const addTask = async (task: Omit<Task, "id">) => {
+export const addTask = async (task: Omit<Task, "id">, userId: string) => {
   try {
-    const docRef = await addDoc(collection(db, TASKS_COLLECTION), {
+    const docRef = await addDoc(collection(db, "tasks"), {
       ...task,
-      createdAt: new Date().toISOString(), // 🔥 Sauvegarde sous forme de string
+      userId, // 🔥 Associe la tâche à l'utilisateur
+      createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
     return docRef.id;
