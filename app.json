@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "mytaskmanager",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -23,6 +24,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "my-task-manager77"
+      },
+      "googleClientIdExpo": "511154049354-1c91fkilbss9o5i43j88r30jfarjjvsk.apps.googleusercontent.com",
+      "googleClientIdWeb": "511154049354-1c91fkilbss9o5i43j88r30jfarjjvsk.apps.googleusercontent.com",
+      "googleClientIdAndroid": "511154049354-nsg09pu293m5cplomjun46k9u6v8p4vp.apps.googleusercontent.com"
     }
   }
 }
