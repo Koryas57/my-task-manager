@@ -28,10 +28,12 @@ const tasksSlice = createSlice({
 export const { setTasks } = tasksSlice.actions;
 
 // ✅ Fonction pour écouter Firebase et synchroniser Redux
-export const startListeningToTasks = () => (dispatch: AppDispatch) => {
-  return listenToTasks((tasks) => {
-    dispatch(setTasks(tasks));
-  });
-};
+export const startListeningToTasks =
+  (uid: string) => (dispatch: AppDispatch) => {
+    return listenToTasks(uid, (tasks) => {
+      // ✅ On passe l'UID ici !
+      dispatch(setTasks(tasks));
+    });
+  };
 
 export default tasksSlice.reducer;
