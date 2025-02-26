@@ -18,8 +18,14 @@ const tasksSlice = createSlice({
     setTasks(state, action: PayloadAction<Task[]>) {
       state.tasks = action.payload.map((task) => ({
         ...task,
-        createdAt: task.createdAt, // ✅ Stocké en string
-        updatedAt: task.updatedAt,
+        createdAt:
+          typeof task.createdAt === "string"
+            ? new Date(task.createdAt)
+            : task.createdAt,
+        updatedAt:
+          typeof task.updatedAt === "string"
+            ? new Date(task.updatedAt)
+            : task.updatedAt,
       }));
     },
   },
@@ -31,7 +37,6 @@ export const { setTasks } = tasksSlice.actions;
 export const startListeningToTasks =
   (uid: string) => (dispatch: AppDispatch) => {
     return listenToTasks(uid, (tasks) => {
-      // ✅ On passe l'UID ici !
       dispatch(setTasks(tasks));
     });
   };
