@@ -8,4 +8,5 @@ export interface Task {
   assignedTo?: string;
   createdAt: Date;
   updatedAt: Date;
+  details?: string;
 }

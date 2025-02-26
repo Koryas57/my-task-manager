@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { colors } from "../styles/colors";
 import { typography } from "../styles/typography";
+import React from "react";
 
 interface RouteParams {
   id: string;
