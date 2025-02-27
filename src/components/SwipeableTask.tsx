@@ -95,10 +95,14 @@ const styles = StyleSheet.create({
   actionButton: {
     alignItems: "center",
     width: 80,
-    height: "100%",
+    height: "83%",
     justifyContent: "center",
   },
-  deleteButton: { backgroundColor: "red", borderRadius: 5 },
+  deleteButton: {
+    backgroundColor: "red",
+    borderRadius: 5,
+    marginTop: 5,
+  },
 });
 
 export default SwipeableTask;

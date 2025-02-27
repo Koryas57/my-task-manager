@@ -36,14 +36,21 @@ const convertTask = (doc: any): Task => {
 
 // ✅ Récupérer toutes les tâches en temps réel
 export const listenToTasks = (
-  userId: string,
+  userId: string | undefined,
   callback: (tasks: Task[]) => void
 ) => {
+  if (!userId) {
+    console.warn(
+      "⚠️ Aucun userId trouvé, arrêt de la récupération des tâches."
+    );
+    return () => {}; // ✅ Retourne une fonction vide pour éviter des erreurs
+  }
+
   const q = query(collection(db, "tasks"), where("userId", "==", userId));
 
   return onSnapshot(q, (snapshot) => {
-    const tasks = snapshot.docs.map(convertTask); // ✅ Appel de `convertTask`
-    console.log("📡 Tâches récupérées depuis Firestore :", tasks); // 🔥 DEBUG
+    const tasks = snapshot.docs.map(convertTask);
+    console.log("📥 Tâches récupérées depuis Firestore :", tasks);
     callback(tasks);
   });
 };

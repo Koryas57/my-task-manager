@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../store";
 import { startListeningToTasks, setTasks } from "../store/tasksSlice";
@@ -15,11 +8,14 @@ import * as AuthSession from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
 import Constants from "expo-constants";
 import { addTask, deleteTask, updateTask } from "../services/taskService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import TaskList from "../components/TaskList";
 import ProfileHeader from "../components/ProfileHeader";
 import TaskInput from "../components/TaskInput";
 import TaskModal from "../components/TaskModal";
 import { Task } from "../types/Task";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../services/firebase";
 
 const HomeScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -36,10 +32,17 @@ const HomeScreen: React.FC = () => {
     scopes: ["openid", "profile", "email"],
   });
 
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // 🔥 Vérifier d'abord AsyncStorage, puis Firebase Auth
   useEffect(() => {
-    if (!user) return;
+    checkStoredUser();
+  }, []);
+
+  useEffect(() => {
+    if (!user || !user.uid) return;
     const unsubscribe = startListeningToTasks(user.uid)(dispatch);
-    return () => unsubscribe();
+    return () => unsubscribe && unsubscribe();
   }, [user]);
 
   useEffect(() => {
@@ -54,10 +57,66 @@ const HomeScreen: React.FC = () => {
               photoURL: userInfo.picture,
             })
           );
+          if (rememberMe) saveUser(userInfo);
         }
       });
     }
   }, [response]);
+
+  // 🔥 Vérifier le stockage local et ensuite Firebase Auth
+  const checkStoredUser = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem("user");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        console.log("✅ Stockage récupéré, setUser appelé avec :", parsedUser);
+        dispatch(setUser(parsedUser));
+      } else {
+        console.log("❌ Aucun utilisateur stocké.");
+      }
+    } catch (error) {
+      console.error("❌ Erreur récupération utilisateur :", error);
+    }
+
+    // 🔥 Écouter Firebase Auth après avoir chargé le stockage
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("✅ Firebase Auth : utilisateur toujours connecté :", user);
+        dispatch(
+          setUser({
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+          })
+        );
+      } else {
+        console.log("❌ Firebase Auth : Aucun utilisateur récupéré.");
+        dispatch(setUser(null));
+      }
+    });
+
+    return () => unsubscribe();
+  };
+
+  // 🔹 Sauvegarde l'utilisateur si "Rester connecté" est activé
+  const saveUser = async (userInfo: any) => {
+    try {
+      await AsyncStorage.setItem("user", JSON.stringify(userInfo));
+    } catch (error) {
+      console.error("❌ Erreur lors de l'enregistrement utilisateur :", error);
+    }
+  };
+
+  // 🔹 Déconnexion propre
+  const logout = async () => {
+    try {
+      await AsyncStorage.removeItem("user");
+      dispatch(setUser(null));
+    } catch (error) {
+      console.error("❌ Erreur suppression utilisateur :", error);
+    }
+  };
 
   const getUserInfo = async (accessToken: string) => {
     try {
@@ -69,10 +128,12 @@ const HomeScreen: React.FC = () => {
       );
       return await response.json();
     } catch (error) {
-      console.error("Erreur récupération utilisateur", error);
+      console.error("❌ Erreur récupération utilisateur :", error);
       return null;
     }
   };
+
+  // CRUD
 
   const handleOpenPopup = (task: Task) => {
     setSelectedTask(task);
@@ -143,7 +204,7 @@ const HomeScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ProfileHeader user={user} />
+      <ProfileHeader user={user} onLogout={logout} />
       <Text style={styles.title}>Gestionnaire de Tâches</Text>
       {user && <TaskInput onAddTask={handleAddTask} />}
 
@@ -162,23 +223,35 @@ const HomeScreen: React.FC = () => {
         </Text>
       )}
       {!user && (
-        <TouchableOpacity
-          style={styles.authButton}
-          onPress={async () => {
-            const result = await promptAsync();
-            if (result.type === "success" && result.authentication?.idToken) {
-              dispatch(loginUser(result.authentication.idToken));
-            } else {
-              console.error("❌ Échec de l'authentification Google !");
-            }
-          }}
-        >
-          <Image
-            source={require("../../assets/g-logo.png")}
-            style={styles.googleIcon}
-          />
-          <Text style={styles.authButtonText}>Se connecter avec Google</Text>
-        </TouchableOpacity>
+        <>
+          <TouchableOpacity
+            style={styles.authButton}
+            onPress={async () => {
+              const result = await promptAsync();
+              if (result.type === "success" && result.authentication?.idToken) {
+                dispatch(loginUser(result.authentication.idToken));
+              } else {
+                console.error("❌ Échec de l'authentification Google !");
+              }
+            }}
+          >
+            <Image
+              source={require("../../assets/g-logo.png")}
+              style={styles.googleIcon}
+            />
+            <Text style={styles.authButtonText}>Se connecter avec Google</Text>
+          </TouchableOpacity>
+          <View style={styles.checkboxContainer}>
+            <TouchableOpacity
+              onPress={() => setRememberMe(!rememberMe)}
+              style={[
+                styles.checkbox,
+                rememberMe ? styles.checkboxChecked : styles.checkboxUnchecked,
+              ]}
+            />
+            <Text style={styles.checkboxLabel}>Rester connecté(e)</Text>
+          </View>
+        </>
       )}
 
       <TaskModal
@@ -207,6 +280,20 @@ const styles = StyleSheet.create({
   },
   authButtonText: { color: "white", fontSize: 16, marginLeft: 10 },
   googleIcon: { width: 24, height: 24 },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 15,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 3,
+    marginRight: 10,
+  },
+  checkboxChecked: { backgroundColor: "#4CAF50" },
+  checkboxUnchecked: { backgroundColor: "#ccc" },
+  checkboxLabel: { color: "#fff" },
 });
 
 export default HomeScreen;
